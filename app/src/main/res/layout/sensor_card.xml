@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="6dp"
+    app:cardBackgroundColor="#0F1A2E"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:gravity="center"
+        android:minHeight="110dp">
+
+        <!-- Sun Icon -->
+        <ImageView
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@android:drawable/ic_menu_day"
+            app:tint="#FFA726"
+            android:layout_marginBottom="10dp" />
+
+        <!-- Direction Label -->
+        <TextView
+            android:id="@+id/sensorDirection"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="NW"
+            android:textColor="#8E9AAF"
+            android:textSize="13sp"
+            android:layout_marginBottom="6dp" />
+
+        <!-- Sensor Percentage -->
+        <TextView
+            android:id="@+id/sensorValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0%"
+            android:textColor="#FFA726"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

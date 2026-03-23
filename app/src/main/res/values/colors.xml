@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark Blue Theme -->
+    <color name="primary">#0A1628</color>
+    <color name="primary_dark">#050B14</color>
+    <color name="primary_light">#162033</color>
+
+    <!-- Accent Colors -->
+    <color name="accent">#00D9A3</color>
+    <color name="accent_cyan">#00D9A3</color>
+    <color name="accent_blue">#5B8DEF</color>
+    <color name="accent_orange">#FFA726</color>
+
+    <!-- Background Colors -->
+    <color name="background">#0A1628</color>
+    <color name="surface">#162033</color>
+    <color name="surface_dark">#0F1A2E</color>
+    <color name="surface_light">#1A2640</color>
+
+    <!-- Text Colors -->
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#8E9AAF</color>
+    <color name="text_tertiary">#5A6B82</color>
+
+    <!-- Status Colors -->
+    <color name="success">#00D9A3</color>
+    <color name="warning">#FFA726</color>
+    <color name="error">#FF5252</color>
+    <color name="info">#5B8DEF</color>
+
+    <!-- UI Colors -->
+    <color name="border">#2A3F5F</color>
+    <color name="divider">#1A2640</color>
+
+    <!-- Standard Colors -->
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
+    <color name="transparent">#00000000</color>
+</resources>

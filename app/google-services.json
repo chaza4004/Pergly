@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "582256276458",
+    "project_id": "mmppt2-21bb0",
+    "storage_bucket": "mmppt2-21bb0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:582256276458:android:f3338160cd32b1d9eaf893",
+        "android_client_info": {
+          "package_name": "com.example.mdpapplication"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "582256276458-boankme6s2pvkd6m14f4pk3uhvubb3el.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBtucsdbPS7QJdV65leYmj05Fh0BjlDlnE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "582256276458-boankme6s2pvkd6m14f4pk3uhvubb3el.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:582256276458:android:203ea8c0c91adad2eaf893",
+        "android_client_info": {
+          "package_name": "com.example.pergly"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "582256276458-boankme6s2pvkd6m14f4pk3uhvubb3el.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBtucsdbPS7QJdV65leYmj05Fh0BjlDlnE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "582256276458-boankme6s2pvkd6m14f4pk3uhvubb3el.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

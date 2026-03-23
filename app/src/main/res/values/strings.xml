@@ -1,0 +1,83 @@
+<resources>
+    <string name="app_name">Pergly</string>
+    <string name="tagline">Smart Solar Pergola</string>
+
+    <!-- Navigation -->
+    <string name="dashboard">Dashboard</string>
+    <string name="control">Control</string>
+    <string name="history">History</string>
+    <string name="settings">Settings</string>
+    <string name="logout">Logout</string>
+
+    <!-- Dashboard -->
+    <string name="smart_solar_pergola">Smart Solar Pergola</string>
+    <string name="real_time_monitoring">Real-time Monitoring</string>
+    <string name="online">Online</string>
+    <string name="offline">Offline</string>
+    <string name="current_generation">Current Generation</string>
+    <string name="watts">Watts</string>
+    <string name="today_total">Today\'s Total</string>
+    <string name="mode_manual">Mode: MANUAL CONTROL</string>
+    <string name="mode_auto">Mode: AUTO TRACKING</string>
+    <string name="motor_positions">Motor Positions</string>
+    <string name="light_sensors">Light Sensors</string>
+    <string name="motor_1">Motor 1</string>
+    <string name="motor_2">Motor 2</string>
+    <string name="motor_3">Motor 3</string>
+    <string name="motor_4">Motor 4</string>
+
+    <!-- Control -->
+    <string name="current_command">Current Command</string>
+    <string name="manual_controls">Manual Controls</string>
+    <string name="up">UP</string>
+    <string name="down">DOWN</string>
+    <string name="emergency_stop">EMERGENCY STOP</string>
+    <string name="control_info">In AUTO mode, the pergola follows the sun automatically using light sensors. Switch to MANUAL mode for direct control.</string>
+
+    <!-- History -->
+    <string name="power_generation_24h">Power Generation (24h)</string>
+    <string name="system_information">System Information</string>
+    <string name="uptime">Uptime</string>
+    <string name="data_points">Data Points</string>
+    <string name="hours_format">%.1f hours</string>
+
+    <!-- Settings -->
+    <string name="account_preferences">Account &amp; Preferences</string>
+    <string name="system">SYSTEM</string>
+    <string name="connection_status">Connection Status</string>
+    <string name="hardware_info">Hardware Info</string>
+    <string name="system_updates">System Updates</string>
+
+    <!-- Login -->
+    <string name="welcome_back">Welcome Back</string>
+    <string name="login_to_account">Login to your account</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="login">Login</string>
+    <string name="dont_have_account">Don\'t have an account?</string>
+    <string name="sign_up">Sign Up</string>
+
+    <!-- Sign Up -->
+    <string name="create_account">Create Account</string>
+    <string name="join_us">Join us in smart energy management</string>
+    <string name="first_name">First Name</string>
+    <string name="last_name">Last Name</string>
+    <string name="location">Location (City)</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="already_have_account">Already have an account?</string>
+
+    <!-- Forgot Password -->
+    <string name="forgot_password_title">Forgot Password?</string>
+    <string name="forgot_password_subtitle">Don\'t worry! Enter your email and we\'ll send you a reset link</string>
+    <string name="send_reset_link">Send Reset Link</string>
+    <string name="remember_password">Remember your password?</string>
+
+    <!-- Common -->
+    <string name="error">Error</string>
+    <string name="success">Success</string>
+    <string name="loading">Loading...</string>
+    <string name="back">Back</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+</resources>
