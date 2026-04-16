@@ -18,7 +18,7 @@ class SignUpActivity : AppCompatActivity() {
 
 
     private val auth = FirebaseAuth.getInstance()
-    private lateinit var backBtn: MaterialButton
+
     private lateinit var database: DatabaseReference
 
     private lateinit var firstNameInput: TextInputEditText
