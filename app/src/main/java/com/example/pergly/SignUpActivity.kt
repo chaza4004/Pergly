@@ -13,6 +13,8 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 
 class SignUpActivity : AppCompatActivity() {
+    private lateinit var backBtn: MaterialButton
+
 
     private val auth = FirebaseAuth.getInstance()
     private lateinit var database: DatabaseReference
@@ -47,11 +49,15 @@ class SignUpActivity : AppCompatActivity() {
 
         signUpBtn = findViewById(R.id.signUpBtn)
         loginText = findViewById(R.id.loginText)
+        backBtn = findViewById(R.id.backBtn)
     }
 
     private fun setupListeners() {
         signUpBtn.setOnClickListener {
             signUpUser()
+        }
+        backBtn.setOnClickListener {
+            finish()
         }
 
         loginText.setOnClickListener {
@@ -59,6 +65,7 @@ class SignUpActivity : AppCompatActivity() {
             finish()
         }
     }
+
 
     private fun signUpUser() {
         val firstName = firstNameInput.text.toString().trim()
