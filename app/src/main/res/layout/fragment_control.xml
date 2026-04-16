@@ -16,7 +16,7 @@
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="20dp"
             app:cardBackgroundColor="#162033"
             app:cardCornerRadius="20dp"
             app:cardElevation="0dp">
@@ -42,9 +42,218 @@
                     android:layout_height="wrap_content"
                     android:text="NONE"
                     android:textColor="#00D9A3"
-                    android:textSize="36sp"
+                    android:textSize="28sp"
                     android:textStyle="bold"
-                    android:letterSpacing="0.1" />
+                    android:gravity="center"
+                    android:letterSpacing="0.05" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Motor Selection Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            app:cardBackgroundColor="#162033"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Select Motor"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="10dp" />
+
+                <TextView
+                    android:id="@+id/selectedMotorText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Selected: Motor 1"
+                    android:textColor="#8E9AAF"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Row 1 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:baselineAligned="false"
+                    android:layout_marginBottom="12dp">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/motor1SelectCard"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        app:cardBackgroundColor="#1A2640"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="0dp"
+                        app:strokeColor="#5B6B8A"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="18dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Motor 1"
+                                android:textColor="#FFFFFF"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/motor1PercentText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="0%"
+                                android:textColor="#00D9A3"
+                                android:textSize="24sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/motor2SelectCard"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        app:cardBackgroundColor="#1A2640"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="0dp"
+                        app:strokeColor="#5B6B8A"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="18dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Motor 2"
+                                android:textColor="#FFFFFF"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/motor2PercentText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="0%"
+                                android:textColor="#00D9A3"
+                                android:textSize="24sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
+
+                <!-- Row 2 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:baselineAligned="false">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/motor3SelectCard"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        app:cardBackgroundColor="#1A2640"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="0dp"
+                        app:strokeColor="#5B6B8A"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="18dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Motor 3"
+                                android:textColor="#FFFFFF"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/motor3PercentText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="0%"
+                                android:textColor="#00D9A3"
+                                android:textSize="24sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/motor4SelectCard"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        app:cardBackgroundColor="#1A2640"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="0dp"
+                        app:strokeColor="#5B6B8A"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="18dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Motor 4"
+                                android:textColor="#FFFFFF"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/motor4PercentText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="0%"
+                                android:textColor="#00D9A3"
+                                android:textSize="24sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -52,7 +261,7 @@
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="20dp"
             app:cardBackgroundColor="#162033"
             app:cardCornerRadius="20dp"
             app:cardElevation="0dp">
@@ -72,14 +281,12 @@
                     android:textStyle="bold"
                     android:layout_marginBottom="20dp" />
 
-                <!-- UP and DOWN Buttons Row -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:layout_marginBottom="16dp">
 
-                    <!-- UP Button -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/upBtn"
                         android:layout_width="0dp"
@@ -90,8 +297,8 @@
                         android:textSize="20sp"
                         android:textStyle="bold"
                         android:textColor="#FFFFFF"
-                        app:cornerRadius="16dp"
                         app:backgroundTint="#00D9A3"
+                        app:cornerRadius="16dp"
                         app:icon="@android:drawable/arrow_up_float"
                         app:iconGravity="top"
                         app:iconSize="48dp"
@@ -99,7 +306,6 @@
                         android:paddingTop="20dp"
                         android:paddingBottom="20dp" />
 
-                    <!-- DOWN Button -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/downBtn"
                         android:layout_width="0dp"
@@ -110,8 +316,8 @@
                         android:textSize="20sp"
                         android:textStyle="bold"
                         android:textColor="#FFFFFF"
-                        app:cornerRadius="16dp"
                         app:backgroundTint="#5B8DEF"
+                        app:cornerRadius="16dp"
                         app:icon="@android:drawable/arrow_down_float"
                         app:iconGravity="top"
                         app:iconSize="48dp"
@@ -120,7 +326,6 @@
                         android:paddingBottom="20dp" />
                 </LinearLayout>
 
-                <!-- Emergency Stop Button -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/emergencyStopBtn"
                     android:layout_width="match_parent"
@@ -129,14 +334,33 @@
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="#FFFFFF"
-                    app:cornerRadius="35dp"
                     app:backgroundTint="#FF5252"
+                    app:cornerRadius="35dp"
                     app:icon="@android:drawable/ic_delete"
                     app:iconGravity="textStart"
                     app:iconSize="28dp"
                     app:iconTint="#FFFFFF"
                     android:paddingStart="24dp"
                     android:paddingEnd="24dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/clearEmergencyBtn"
+                    android:layout_width="match_parent"
+                    android:layout_height="70dp"
+                    android:layout_marginTop="12dp"
+                    android:text="CLEAR EMERGENCY"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    app:backgroundTint="#F39C12"
+                    app:cornerRadius="35dp"
+                    app:icon="@android:drawable/ic_menu_revert"
+                    app:iconGravity="textStart"
+                    app:iconSize="24dp"
+                    app:iconTint="#FFFFFF"
+                    android:paddingStart="24dp"
+                    android:paddingEnd="24dp" />
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -158,16 +382,16 @@
                 <ImageView
                     android:layout_width="32dp"
                     android:layout_height="32dp"
+                    android:layout_marginEnd="16dp"
                     android:src="@android:drawable/ic_dialog_info"
-                    app:tint="#5B8DEF"
-                    android:layout_marginEnd="16dp" />
+                    app:tint="#5B8DEF" />
 
                 <TextView
                     android:id="@+id/infoText"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="In AUTO mode, the pergola follows the sun automatically using light sensors. Switch to MANUAL mode for direct control."
+                    android:text="Select one motor, then use UP or DOWN to move only that motor."
                     android:textColor="#8E9AAF"
                     android:textSize="13sp"
                     android:lineSpacingExtra="4dp" />

@@ -9,12 +9,13 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textview.MaterialTextView
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
 
 class SignUpActivity : AppCompatActivity() {
 
     private val auth = FirebaseAuth.getInstance()
-    private val db = FirebaseFirestore.getInstance()
+    private lateinit var database: DatabaseReference
 
     private lateinit var firstNameInput: TextInputEditText
     private lateinit var lastNameInput: TextInputEditText
@@ -22,12 +23,15 @@ class SignUpActivity : AppCompatActivity() {
     private lateinit var locationInput: TextInputEditText
     private lateinit var passwordInput: TextInputEditText
     private lateinit var confirmPasswordInput: TextInputEditText
+
     private lateinit var signUpBtn: MaterialButton
     private lateinit var loginText: MaterialTextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_signup)
+
+        database = FirebaseDatabase.getInstance().reference
 
         initViews()
         setupListeners()
@@ -40,6 +44,7 @@ class SignUpActivity : AppCompatActivity() {
         locationInput = findViewById(R.id.locationInput)
         passwordInput = findViewById(R.id.passwordInput)
         confirmPasswordInput = findViewById(R.id.confirmPasswordInput)
+
         signUpBtn = findViewById(R.id.signUpBtn)
         loginText = findViewById(R.id.loginText)
     }
@@ -50,10 +55,7 @@ class SignUpActivity : AppCompatActivity() {
         }
 
         loginText.setOnClickListener {
-            finish()
-        }
-
-        findViewById<MaterialButton>(R.id.backBtn).setOnClickListener {
+            startActivity(Intent(this, LoginActivity::class.java))
             finish()
         }
     }
@@ -62,18 +64,23 @@ class SignUpActivity : AppCompatActivity() {
         val firstName = firstNameInput.text.toString().trim()
         val lastName = lastNameInput.text.toString().trim()
         val email = emailInput.text.toString().trim()
-        val location = locationInput.text.toString().trim()
+        val city = locationInput.text.toString().trim()
         val password = passwordInput.text.toString().trim()
         val confirmPassword = confirmPasswordInput.text.toString().trim()
 
-        // Validation
-        if (firstName.isEmpty() || lastName.isEmpty() || location.isEmpty()) {
-            Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
+        if (firstName.isEmpty() ||
+            lastName.isEmpty() ||
+            email.isEmpty() ||
+            city.isEmpty() ||
+            password.isEmpty() ||
+            confirmPassword.isEmpty()
+        ) {
+            Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
             return
         }
 
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            Toast.makeText(this, "Enter valid email", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Please enter a valid email address", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -87,41 +94,65 @@ class SignUpActivity : AppCompatActivity() {
             return
         }
 
-        // Create account
         signUpBtn.isEnabled = false
+
         auth.createUserWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
+            .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     val user = auth.currentUser
-                    user?.let {
-                        // Save user data to Firestore
-                        val userData = hashMapOf(
-                            "firstName" to firstName,
-                            "lastName" to lastName,
-                            "email" to email,
-                            "location" to location,
-                            "createdAt" to System.currentTimeMillis()
-                        )
+                    val userId = user?.uid
 
-                        db.collection("users")
-                            .document(it.uid)
-                            .set(userData)
-                            .addOnSuccessListener {
-                                Toast.makeText(this, "Account Created Successfully", Toast.LENGTH_SHORT).show()
-                                startActivity(Intent(this, MainActivity::class.java))
-                                finish()
-                            }
-                            .addOnFailureListener { e ->
-                                signUpBtn.isEnabled = true
-                                Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                            }
+                    if (userId == null) {
+                        signUpBtn.isEnabled = true
+                        Toast.makeText(this, "Signup failed. Please try again.", Toast.LENGTH_SHORT).show()
+                        return@addOnCompleteListener
                     }
+
+                    val userMap = mapOf(
+                        "firstName" to firstName,
+                        "lastName" to lastName,
+                        "email" to email,
+                        "city" to city
+                    )
+
+                    database.child("users").child(userId).setValue(userMap)
+                        .addOnSuccessListener {
+                            user.sendEmailVerification()
+                                .addOnSuccessListener {
+                                    signUpBtn.isEnabled = true
+                                    Toast.makeText(
+                                        this,
+                                        "Account created. Please verify your email before logging in.",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+
+                                    auth.signOut()
+                                    startActivity(Intent(this, LoginActivity::class.java))
+                                    finish()
+                                }
+                                .addOnFailureListener { e ->
+                                    signUpBtn.isEnabled = true
+                                    Toast.makeText(
+                                        this,
+                                        "Could not send verification email: ${e.message}",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                        }
+                        .addOnFailureListener { e ->
+                            signUpBtn.isEnabled = true
+                            Toast.makeText(
+                                this,
+                                "Failed to save user data: ${e.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
                 } else {
                     signUpBtn.isEnabled = true
                     Toast.makeText(
                         this,
-                        "Sign Up Failed: ${task.exception?.message}",
-                        Toast.LENGTH_SHORT
+                        "Signup failed: ${task.exception?.message}",
+                        Toast.LENGTH_LONG
                     ).show()
                 }
             }

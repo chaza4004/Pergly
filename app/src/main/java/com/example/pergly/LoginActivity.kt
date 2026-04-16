@@ -58,7 +58,6 @@ class LoginActivity : AppCompatActivity() {
         val email = emailInput.text.toString().trim()
         val password = passwordInput.text.toString().trim()
 
-        // Validation
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             emailLayout.error = "Enter valid email"
             return
@@ -71,16 +70,31 @@ class LoginActivity : AppCompatActivity() {
         }
         passwordLayout.error = null
 
-        // Login with Firebase
         loginBtn.isEnabled = false
+
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
-                loginBtn.isEnabled = true
                 if (task.isSuccessful) {
-                    Toast.makeText(this, "Login Successful", Toast.LENGTH_SHORT).show()
-                    startActivity(Intent(this, MainActivity::class.java))
-                    finish()
+                    val user = auth.currentUser
+
+                    user?.reload()?.addOnCompleteListener {
+                        loginBtn.isEnabled = true
+
+                        if (user != null && user.isEmailVerified) {
+                            Toast.makeText(this, "Login Successful", Toast.LENGTH_SHORT).show()
+                            startActivity(Intent(this, MainActivity::class.java))
+                            finish()
+                        } else {
+                            auth.signOut()
+                            Toast.makeText(
+                                this,
+                                "Please verify your email before logging in.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
                 } else {
+                    loginBtn.isEnabled = true
                     Toast.makeText(
                         this,
                         "Login Failed: ${task.exception?.message}",

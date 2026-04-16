@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "582256276458",
+    "firebase_url": "https://mmppt2-21bb0-default-rtdb.firebaseio.com",
     "project_id": "mmppt2-21bb0",
     "storage_bucket": "mmppt2-21bb0.firebasestorage.app"
   },
@@ -42,6 +43,14 @@
         }
       },
       "oauth_client": [
+        {
+          "client_id": "582256276458-io25djhu6qckvfaqiq7msb1im2tkja0g.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.pergly",
+            "certificate_hash": "dc4264a7a1abcb265a93c5eda64a59593bf303e0"
+          }
+        },
         {
           "client_id": "582256276458-boankme6s2pvkd6m14f4pk3uhvubb3el.apps.googleusercontent.com",
           "client_type": 3

@@ -12,6 +12,9 @@ import com.google.android.material.card.MaterialCardView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.google.firebase.firestore.FirebaseFirestore
+import android.content.Intent
+import android.widget.Toast
+import com.example.pergly.LoginActivity
 
 class SettingsFragment : Fragment() {
 
@@ -20,6 +23,8 @@ class SettingsFragment : Fragment() {
     private lateinit var connectionStatusText: TextView
     private lateinit var hardwareInfoCard: MaterialCardView
     private lateinit var systemUpdatesCard: MaterialCardView
+
+    private lateinit var logoutCard: MaterialCardView
 
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
@@ -53,6 +58,7 @@ class SettingsFragment : Fragment() {
         connectionStatusText = view.findViewById(R.id.connectionStatusText)
         hardwareInfoCard = view.findViewById(R.id.hardwareInfoCard)
         systemUpdatesCard = view.findViewById(R.id.systemUpdatesCard)
+        logoutCard = view.findViewById(R.id.logoutCard)
     }
 
     private fun loadUserInfo() {
@@ -106,6 +112,16 @@ class SettingsFragment : Fragment() {
 
         systemUpdatesCard.setOnClickListener {
             // TODO: Navigate to system updates screen
+        }
+
+        logoutCard.setOnClickListener {
+            auth.signOut()
+            Toast.makeText(requireContext(), "Logged out successfully", Toast.LENGTH_SHORT).show()
+
+            val intent = Intent(requireContext(), LoginActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            requireActivity().finish()
         }
     }
 

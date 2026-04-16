@@ -21,9 +21,10 @@
         <ImageView
             android:layout_width="36dp"
             android:layout_height="36dp"
-            android:src="@android:drawable/ic_menu_day"
+            android:src="@android:drawable/ic_menu_compass"
             app:tint="#FFA726"
             android:layout_marginBottom="10dp" />
+
 
         <!-- Direction Label -->
         <TextView

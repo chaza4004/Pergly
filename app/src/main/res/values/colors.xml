@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Dark Blue Theme -->
+    <color name="control_motor_card_bg">#1A2640</color>
+    <color name="control_motor_card_stroke">#5B6B8A</color>
+    <color name="teal_700">#018786</color>
+    <color name="teal_200">#03DAC5</color>
+
     <color name="primary">#0A1628</color>
     <color name="primary_dark">#050B14</color>
     <color name="primary_light">#162033</color>

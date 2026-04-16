@@ -1,11 +1,13 @@
 package com.example.pergly.fragments
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.pergly.R
 import com.google.android.material.button.MaterialButton
@@ -13,13 +15,14 @@ import com.google.firebase.database.*
 
 class DashboardFragment : Fragment() {
 
-    // Main displays
     private lateinit var powerValue: TextView
     private lateinit var todayTotalText: TextView
     private lateinit var modeBtn: MaterialButton
     private lateinit var statusText: TextView
 
-    // Motor displays
+    private lateinit var windSpeedText: TextView
+    private lateinit var windStatusText: TextView
+
     private lateinit var motor1Label: TextView
     private lateinit var motor1Percentage: TextView
     private lateinit var motor1Progress: ProgressBar
@@ -36,7 +39,6 @@ class DashboardFragment : Fragment() {
     private lateinit var motor4Percentage: TextView
     private lateinit var motor4Progress: ProgressBar
 
-    // Sensor displays
     private lateinit var sensorNWDirection: TextView
     private lateinit var sensorNWValue: TextView
 
@@ -50,18 +52,26 @@ class DashboardFragment : Fragment() {
     private lateinit var sensorSEValue: TextView
 
     private lateinit var database: DatabaseReference
-    private var isAutoMode = false
 
-    // Store listeners for proper cleanup
+    private var isAutoMode = false
+    private var currentWindSpeed = 0
+    private val windThreshold = 30
+
+    private var emergencyActive = false
+    private var emergencySource = "none"
+
     private var powerListener: ValueEventListener? = null
     private var motorListener: ValueEventListener? = null
     private var sensorListener: ValueEventListener? = null
+    private var windListener: ValueEventListener? = null
+    private var emergencyListener: ValueEventListener? = null
+    private var modeListener: ValueEventListener? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         return inflater.inflate(R.layout.fragment_dashboard, container, false)
     }
 
@@ -75,6 +85,8 @@ class DashboardFragment : Fragment() {
         listenToSensorData()
         listenToMotorPositions()
         listenToLightSensors()
+        listenToEmergencyState()
+        listenToWindData()
     }
 
     private fun initViews(view: View) {
@@ -82,6 +94,9 @@ class DashboardFragment : Fragment() {
         todayTotalText = view.findViewById(R.id.todayTotalText)
         modeBtn = view.findViewById(R.id.modeBtn)
         statusText = view.findViewById(R.id.statusText)
+
+        windSpeedText = view.findViewById(R.id.windSpeedText)
+        windStatusText = view.findViewById(R.id.windStatusText)
 
         val motor1Card = view.findViewById<View>(R.id.motor1Card)
         motor1Label = motor1Card.findViewById(R.id.motorLabel)
@@ -129,38 +144,84 @@ class DashboardFragment : Fragment() {
     }
 
     private fun setupModeButton() {
-        database.child("pergola/mode").get().addOnSuccessListener { snapshot ->
-            val mode = snapshot.getValue(String::class.java) ?: "manual"
-            isAutoMode = mode == "auto"
-            updateModeButton()
+        modeListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val mode = snapshot.getValue(String::class.java)?.lowercase()?.trim() ?: "manual"
+                isAutoMode = mode == "auto"
+                updateModeButton()
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("DashboardFragment", "Mode listener cancelled: ${error.message}")
+            }
+        }
+
+        modeListener?.let {
+            database.child("pergola/mode").addValueEventListener(it)
         }
 
         modeBtn.setOnClickListener {
-            isAutoMode = !isAutoMode
-            val mode = if (isAutoMode) "auto" else "manual"
+            if (emergencyActive) {
+                Toast.makeText(
+                    requireContext(),
+                    "Cannot change mode while emergency stop is active",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@setOnClickListener
+            }
 
-            database.child("pergola/mode").setValue(mode)
-                .addOnSuccessListener {
-                    updateModeButton()
-                }
+            val newMode = if (isAutoMode) "manual" else "auto"
+            database.child("pergola/mode").setValue(newMode)
         }
     }
 
     private fun updateModeButton() {
+        if (!isAdded) return
+
+        if (emergencyActive) {
+            modeBtn.text = if (emergencySource == "manual") {
+                "Mode: AUTO (MANUAL EMERGENCY LOCK)"
+            } else {
+                "Mode: AUTO (WIND SAFETY LOCK)"
+            }
+
+            modeBtn.isEnabled = false
+            modeBtn.alpha = 0.6f
+            modeBtn.setBackgroundColor(
+                requireContext().getColor(android.R.color.holo_red_dark)
+            )
+            return
+        }
+
+        modeBtn.isEnabled = true
+        modeBtn.alpha = 1.0f
+
         if (isAutoMode) {
             modeBtn.text = "Mode: AUTO TRACKING"
-            modeBtn.setBackgroundColor(resources.getColor(android.R.color.holo_green_dark, null))
+            modeBtn.setBackgroundColor(
+                requireContext().getColor(android.R.color.holo_green_dark)
+            )
         } else {
             modeBtn.text = "Mode: MANUAL CONTROL"
-            modeBtn.setBackgroundColor(resources.getColor(android.R.color.holo_blue_dark, null))
+            modeBtn.setBackgroundColor(
+                requireContext().getColor(android.R.color.holo_blue_dark)
+            )
         }
     }
 
     private fun listenToSensorData() {
         powerListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val currentWatts = snapshot.child("current_watts").getValue(Double::class.java) ?: 0.0
-                val todayKwh = snapshot.child("today_kwh").getValue(Double::class.java) ?: 0.0
+                val currentWatts =
+                    snapshot.child("current_watts").getValue(Double::class.java)
+                        ?: snapshot.child("current_watts").getValue(Long::class.java)?.toDouble()
+                        ?: 0.0
+
+                val todayKwh =
+                    snapshot.child("today_kwh").getValue(Double::class.java)
+                        ?: snapshot.child("today_kwh").getValue(Long::class.java)?.toDouble()
+                        ?: 0.0
+
                 val online = snapshot.child("online").getValue(Boolean::class.java) ?: false
 
                 powerValue.text = String.format("%.0f", currentWatts)
@@ -169,8 +230,7 @@ class DashboardFragment : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                powerValue.text = "---"
-                statusText.text = "Offline"
+                Log.e("DashboardFragment", "Power listener cancelled: ${error.message}")
             }
         }
 
@@ -182,10 +242,10 @@ class DashboardFragment : Fragment() {
     private fun listenToMotorPositions() {
         motorListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val motor1 = snapshot.child("motor1").getValue(Int::class.java) ?: 0
-                val motor2 = snapshot.child("motor2").getValue(Int::class.java) ?: 0
-                val motor3 = snapshot.child("motor3").getValue(Int::class.java) ?: 0
-                val motor4 = snapshot.child("motor4").getValue(Int::class.java) ?: 0
+                val motor1 = snapshot.child("motor1").getValue(Long::class.java)?.toInt() ?: 0
+                val motor2 = snapshot.child("motor2").getValue(Long::class.java)?.toInt() ?: 0
+                val motor3 = snapshot.child("motor3").getValue(Long::class.java)?.toInt() ?: 0
+                val motor4 = snapshot.child("motor4").getValue(Long::class.java)?.toInt() ?: 0
 
                 updateMotorDisplay(motor1Percentage, motor1Progress, motor1)
                 updateMotorDisplay(motor2Percentage, motor2Progress, motor2)
@@ -194,7 +254,7 @@ class DashboardFragment : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                // Handle error
+                Log.e("DashboardFragment", "Motor listener cancelled: ${error.message}")
             }
         }
 
@@ -204,26 +264,27 @@ class DashboardFragment : Fragment() {
     }
 
     private fun updateMotorDisplay(percentageView: TextView, progressBar: ProgressBar, value: Int) {
-        percentageView.text = "$value%"
-        progressBar.progress = value
+        val safeValue = value.coerceIn(0, 100)
+        percentageView.text = "$safeValue%"
+        progressBar.progress = safeValue
     }
 
     private fun listenToLightSensors() {
         sensorListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val nw = snapshot.child("nw").getValue(Int::class.java) ?: 0
-                val ne = snapshot.child("ne").getValue(Int::class.java) ?: 0
-                val sw = snapshot.child("sw").getValue(Int::class.java) ?: 0
-                val se = snapshot.child("se").getValue(Int::class.java) ?: 0
+                val nw = snapshot.child("nw").getValue(Long::class.java)?.toInt() ?: 0
+                val ne = snapshot.child("ne").getValue(Long::class.java)?.toInt() ?: 0
+                val sw = snapshot.child("sw").getValue(Long::class.java)?.toInt() ?: 0
+                val se = snapshot.child("se").getValue(Long::class.java)?.toInt() ?: 0
 
-                sensorNWValue.text = "$nw%"
-                sensorNEValue.text = "$ne%"
-                sensorSWValue.text = "$sw%"
-                sensorSEValue.text = "$se%"
+                sensorNWValue.text = "${nw.coerceIn(0, 100)}%"
+                sensorNEValue.text = "${ne.coerceIn(0, 100)}%"
+                sensorSWValue.text = "${sw.coerceIn(0, 100)}%"
+                sensorSEValue.text = "${se.coerceIn(0, 100)}%"
             }
 
             override fun onCancelled(error: DatabaseError) {
-                // Handle error
+                Log.e("DashboardFragment", "Sensor listener cancelled: ${error.message}")
             }
         }
 
@@ -232,11 +293,60 @@ class DashboardFragment : Fragment() {
         }
     }
 
+    private fun listenToWindData() {
+        windListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val windSpeed =
+                    snapshot.getValue(Long::class.java)?.toInt()
+                        ?: snapshot.getValue(Double::class.java)?.toInt()
+                        ?: 0
+
+                currentWindSpeed = windSpeed
+                windSpeedText.text = "$windSpeed km/h"
+
+                windStatusText.text = if (windSpeed > windThreshold) {
+                    "High wind - safety lock active"
+                } else {
+                    "Safe conditions"
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("DashboardFragment", "Wind listener cancelled: ${error.message}")
+            }
+        }
+
+        windListener?.let {
+            database.child("pergola/weather/wind_speed").addValueEventListener(it)
+        }
+    }
+
+    private fun listenToEmergencyState() {
+        emergencyListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                emergencyActive = snapshot.child("emergency_active").getValue(Boolean::class.java) ?: false
+                emergencySource = snapshot.child("emergency_source").getValue(String::class.java)?.lowercase()?.trim() ?: "none"
+                updateModeButton()
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("DashboardFragment", "Emergency listener cancelled: ${error.message}")
+            }
+        }
+
+        emergencyListener?.let {
+            database.child("pergola/safety").addValueEventListener(it)
+        }
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
-        // Remove listeners properly
+
         powerListener?.let { database.child("pergola/power").removeEventListener(it) }
         motorListener?.let { database.child("pergola/motors").removeEventListener(it) }
         sensorListener?.let { database.child("pergola/light_sensors").removeEventListener(it) }
+        windListener?.let { database.child("pergola/weather/wind_speed").removeEventListener(it) }
+        emergencyListener?.let { database.child("pergola/safety").removeEventListener(it) }
+        modeListener?.let { database.child("pergola/mode").removeEventListener(it) }
     }
 }

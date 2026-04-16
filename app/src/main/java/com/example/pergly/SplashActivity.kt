@@ -34,6 +34,7 @@ class SplashActivity : AppCompatActivity() {
         }, 2500) // 2.5 seconds
     }
 
+
     private fun checkAuthState() {
         val currentUser = auth.currentUser
         val intent = if (currentUser != null) {
