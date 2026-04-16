@@ -11,10 +11,12 @@ import com.google.android.material.textview.MaterialTextView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
 
 class SignUpActivity : AppCompatActivity() {
 
     private val auth = FirebaseAuth.getInstance()
+    private lateinit var backBtn: MaterialButton
     private lateinit var database: DatabaseReference
 
     private lateinit var firstNameInput: TextInputEditText
@@ -47,11 +49,15 @@ class SignUpActivity : AppCompatActivity() {
 
         signUpBtn = findViewById(R.id.signUpBtn)
         loginText = findViewById(R.id.loginText)
+        backBtn = findViewById(R.id.backBtn)
     }
 
     private fun setupListeners() {
         signUpBtn.setOnClickListener {
             signUpUser()
+        }
+        backBtn.setOnClickListener {
+            finish()
         }
 
         loginText.setOnClickListener {
@@ -149,11 +155,23 @@ class SignUpActivity : AppCompatActivity() {
                         }
                 } else {
                     signUpBtn.isEnabled = true
-                    Toast.makeText(
-                        this,
-                        "Signup failed: ${task.exception?.message}",
-                        Toast.LENGTH_LONG
-                    ).show()
+
+                    when (task.exception) {
+                        is FirebaseAuthUserCollisionException -> {
+                            Toast.makeText(
+                                this,
+                                "This email is already registered. Please log in instead.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                        else -> {
+                            Toast.makeText(
+                                this,
+                                "Signup failed: ${task.exception?.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
                 }
             }
     }
