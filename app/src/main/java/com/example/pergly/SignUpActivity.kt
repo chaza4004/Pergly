@@ -14,6 +14,8 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 
 class SignUpActivity : AppCompatActivity() {
+    private lateinit var backBtn: MaterialButton
+
 
     private val auth = FirebaseAuth.getInstance()
     private lateinit var backBtn: MaterialButton
@@ -65,6 +67,7 @@ class SignUpActivity : AppCompatActivity() {
             finish()
         }
     }
+
 
     private fun signUpUser() {
         val firstName = firstNameInput.text.toString().trim()
