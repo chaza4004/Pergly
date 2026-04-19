@@ -1,82 +1,20 @@
-//package com.example.pergly
-//
-//import android.os.Bundle
-//import androidx.appcompat.app.AppCompatActivity
-//import androidx.appcompat.widget.Toolbar
-//import androidx.fragment.app.Fragment
-//import com.example.pergly.fragments.ControlFragment
-//import com.example.pergly.fragments.DashboardFragment
-//import com.example.pergly.fragments.HistoryFragment
-//import com.example.pergly.fragments.SettingsFragment
-//import com.google.android.material.bottomnavigation.BottomNavigationView
-//
-//class MainActivity : AppCompatActivity() {
-//
-//    private lateinit var bottomNavigation: BottomNavigationView
-//
-//    override fun onCreate(savedInstanceState: Bundle?) {
-//        super.onCreate(savedInstanceState)
-//        setContentView(R.layout.activity_main)
-//
-//        val toolbar: Toolbar = findViewById(R.id.toolbar)
-//        setSupportActionBar(toolbar)
-//        supportActionBar?.setDisplayShowTitleEnabled(false)
-//
-//        bottomNavigation = findViewById(R.id.bottomNavigation)
-//
-//        bottomNavigation.setOnItemSelectedListener { item ->
-//            when (item.itemId) {
-//                R.id.nav_dashboard -> {
-//                    loadFragment(DashboardFragment())
-//                    true
-//                }
-//                R.id.nav_control -> {
-//                    loadFragment(ControlFragment())
-//                    true
-//                }
-//                R.id.nav_history -> {
-//                    loadFragment(HistoryFragment())
-//                    true
-//                }
-//                R.id.nav_settings -> {
-//                    loadFragment(SettingsFragment())
-//                    true
-//                }
-//                else -> false
-//            }
-//        }
-//
-//
-//        if (savedInstanceState == null) {
-//            loadFragment(DashboardFragment())
-//            bottomNavigation.selectedItemId = R.id.nav_dashboard
-//        }
-//    }
-//
-//    private fun loadFragment(fragment: Fragment) {
-//        supportFragmentManager.beginTransaction()
-//            .replace(R.id.fragmentContainer, fragment)
-//            .commit()
-//    }
-//}
 package com.example.pergly
 
 import android.os.Bundle
-import android.util.Log
 import android.os.Handler
 import android.os.Looper
-
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
-
+import androidx.lifecycle.ViewModelProvider
 import com.example.pergly.fragments.ControlFragment
 import com.example.pergly.fragments.DashboardFragment
 import com.example.pergly.fragments.HistoryFragment
 import com.example.pergly.fragments.SettingsFragment
-
+import com.example.pergly.local.SensorHistoryEntity
+import com.example.pergly.viewmodel.SensorHistoryViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
-
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -88,6 +26,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bottomNavigation: BottomNavigationView
     private lateinit var database: DatabaseReference
     private var globalWindListener: ValueEventListener? = null
+
+    private lateinit var historyViewModel: SensorHistoryViewModel
+    private var lastSavedTime = 0L
 
     private val windEmergencyOn = 30
     private val windEmergencyOff = 25
@@ -104,6 +45,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        historyViewModel = ViewModelProvider(this)[SensorHistoryViewModel::class.java]
         database = FirebaseDatabase.getInstance().reference
 
         val toolbar: Toolbar = findViewById(R.id.toolbar)
@@ -150,6 +92,21 @@ class MainActivity : AppCompatActivity() {
                         ?: snapshot.getValue(Double::class.java)?.toInt()
                         ?: 0
 
+                Log.d("FIREBASE_DATA", "Received wind from Firebase: $windSpeed")
+
+                val currentTime = System.currentTimeMillis()
+                if (currentTime - lastSavedTime > 60000) {
+                    lastSavedTime = currentTime
+
+                    val historyItem = SensorHistoryEntity(
+                        windSpeed = windSpeed.toFloat(),
+                        motorStatus = if (isEmergencyClosing) "CLOSING" else "NORMAL"
+                    )
+
+                    historyViewModel.insertHistory(historyItem)
+                    Log.d("ROOM_SAVE", "Saved to Room: wind=$windSpeed")
+                }
+
                 database.child("pergola/safety").get()
                     .addOnSuccessListener { safetySnapshot ->
                         val emergencyActive = safetySnapshot.child("emergency_active")
@@ -165,15 +122,11 @@ class MainActivity : AppCompatActivity() {
                             "Wind=$windSpeed, emergencyActive=$emergencyActive, source=$emergencySource"
                         )
 
-                        // Activate wind emergency
                         if (windSpeed >= windEmergencyOn) {
                             if (!emergencyActive || emergencySource != "wind") {
                                 startEmergencyClosingFromMain("wind")
                             }
-                        }
-
-                        // Clear wind emergency only if source is wind
-                        else if (windSpeed <= windEmergencyOff) {
+                        } else if (windSpeed <= windEmergencyOff) {
                             if (emergencyActive && emergencySource == "wind") {
                                 val commandData = mapOf(
                                     "command" to "NONE",
@@ -191,7 +144,10 @@ class MainActivity : AppCompatActivity() {
                                         Log.d("MainActivity", "Wind emergency cleared")
                                     }
                                     .addOnFailureListener {
-                                        Log.e("MainActivity", "Failed to clear wind emergency: ${it.message}")
+                                        Log.e(
+                                            "MainActivity",
+                                            "Failed to clear wind emergency: ${it.message}"
+                                        )
                                     }
                             }
                         }
@@ -210,6 +166,7 @@ class MainActivity : AppCompatActivity() {
             database.child("pergola/weather/wind_speed").addValueEventListener(it)
         }
     }
+
     private fun startEmergencyClosingFromMain(source: String) {
         if (isEmergencyClosing) return
 
@@ -266,12 +223,18 @@ class MainActivity : AppCompatActivity() {
                             }
                             .addOnFailureListener {
                                 isEmergencyClosing = false
-                                Log.e("MainActivity", "Failed during emergency closing: ${it.message}")
+                                Log.e(
+                                    "MainActivity",
+                                    "Failed during emergency closing: ${it.message}"
+                                )
                             }
                     }
                     .addOnFailureListener {
                         isEmergencyClosing = false
-                        Log.e("MainActivity", "Failed to read motors during emergency closing: ${it.message}")
+                        Log.e(
+                            "MainActivity",
+                            "Failed to read motors during emergency closing: ${it.message}"
+                        )
                     }
             }
         }
@@ -295,6 +258,7 @@ class MainActivity : AppCompatActivity() {
         emergencyCloseRunnable?.let {
             emergencyHandler.removeCallbacks(it)
         }
+
         isEmergencyClosing = false
     }
 }
