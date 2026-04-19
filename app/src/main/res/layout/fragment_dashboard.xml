@@ -48,6 +48,7 @@
 
             <!-- Online Status Badge -->
             <LinearLayout
+                android:id="@+id/statusBadge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
@@ -59,6 +60,7 @@
                 android:paddingBottom="6dp">
 
                 <View
+                    android:id="@+id/statusDot"
                     android:layout_width="8dp"
                     android:layout_height="8dp"
                     android:layout_marginEnd="6dp"

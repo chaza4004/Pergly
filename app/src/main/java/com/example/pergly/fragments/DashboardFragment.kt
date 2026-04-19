@@ -1,5 +1,8 @@
 package com.example.pergly.fragments
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -31,11 +34,13 @@ import com.example.pergly.ScanActivity
 import android.content.Context
 
 class DashboardFragment : Fragment() {
+    private lateinit var statusBadge: View
 
     private lateinit var powerValue: TextView
     private lateinit var todayTotalText: TextView
     private lateinit var modeBtn: MaterialButton
     private lateinit var statusText: TextView
+    private lateinit var statusDot: View
 
     private lateinit var scanQrBtn: MaterialButton
     private lateinit var prefs: SharedPreferences
@@ -216,11 +221,14 @@ class DashboardFragment : Fragment() {
     }
 
     private fun initViews(view: View) {
+        statusBadge = view.findViewById(R.id.statusBadge)
+
         powerValue = view.findViewById(R.id.powerValue)
         todayTotalText = view.findViewById(R.id.todayTotalText)
         modeBtn = view.findViewById(R.id.modeBtn)
         statusText = view.findViewById(R.id.statusText)
         connectedUnitText = view.findViewById(R.id.connectedUnitText)
+        statusDot = view.findViewById(R.id.statusDot)
 
         windSpeedText = view.findViewById(R.id.windSpeedText)
         windStatusText = view.findViewById(R.id.windStatusText)
@@ -361,6 +369,13 @@ class DashboardFragment : Fragment() {
     }
 
     private fun listenToSensorData() {
+        statusText.text = "Loading..."
+        statusText.setTextColor(requireContext().getColor(R.color.status_online))
+        statusDot.setBackgroundResource(R.drawable.circle_green)
+
+        powerValue.text = "--"
+        todayTotalText.text = "--"
+
         powerListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val currentWatts =
@@ -373,15 +388,33 @@ class DashboardFragment : Fragment() {
                         ?: snapshot.child("today_kwh").getValue(Long::class.java)?.toDouble()
                         ?: 0.0
 
-                val online = snapshot.child("online").getValue(Boolean::class.java) ?: false
-
                 powerValue.text = String.format("%.0f", currentWatts)
                 todayTotalText.text = String.format("%.2f kWh", todayKwh)
-                statusText.text = if (online) "Online" else "Offline"
+
+                if (isInternetAvailable()) {
+                    statusText.text = "Online"
+                    statusText.setTextColor(requireContext().getColor(R.color.status_online))
+                    statusDot.setBackgroundResource(R.drawable.circle_green)
+                    statusBadge.setBackgroundResource(R.drawable.status_badge)
+                } else {
+                    statusText.text = "Offline"
+                    statusText.setTextColor(requireContext().getColor(R.color.status_offline))
+                    statusDot.setBackgroundResource(R.drawable.circle_red)
+                    statusBadge.setBackgroundResource(R.drawable.status_badge_red)
+                }
+
+                Log.d("API_SUCCESS", "Power loaded: $currentWatts")
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("DashboardFragment", "Power listener cancelled: ${error.message}")
+                Log.e("API_ERROR", "Power listener failed: ${error.message}")
+
+                statusText.text = "Offline"
+                statusText.setTextColor(requireContext().getColor(R.color.status_offline))
+                statusDot.setBackgroundResource(R.drawable.circle_red)
+
+                powerValue.text = "--"
+                todayTotalText.text = "--"
             }
         }
 
@@ -420,7 +453,7 @@ class DashboardFragment : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("DashboardFragment", "Motor listener cancelled: ${error.message}")
+                Log.e("API_ERROR", "Motor listener failed: ${error.message}")
             }
         }
 
@@ -450,7 +483,7 @@ class DashboardFragment : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("DashboardFragment", "Sensor listener cancelled: ${error.message}")
+                Log.e("API_ERROR", "Sensor listener failed: ${error.message}")
             }
         }
 
@@ -460,6 +493,9 @@ class DashboardFragment : Fragment() {
     }
 
     private fun listenToWindData() {
+        windSpeedText.text = "--"
+        windStatusText.text = "Loading..."
+
         windListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val windSpeed =
@@ -469,10 +505,20 @@ class DashboardFragment : Fragment() {
 
                 currentWindSpeed = windSpeed
                 windSpeedText.text = "$windSpeed km/h"
+
+                windStatusText.text = if (windSpeed > windThreshold) {
+                    "High wind - safety lock active"
+                } else {
+                    "Safe conditions"
+                }
+
+                Log.d("API_SUCCESS", "Wind loaded: $windSpeed")
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("DashboardFragment", "Wind listener cancelled: ${error.message}")
+                Log.e("API_ERROR", "Wind listener failed: ${error.message}")
+                windSpeedText.text = "--"
+                windStatusText.text = "Offline"
             }
         }
 
@@ -484,8 +530,12 @@ class DashboardFragment : Fragment() {
     private fun listenToEmergencyState() {
         emergencyListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                emergencyActive = snapshot.child("emergency_active").getValue(Boolean::class.java) ?: false
-                emergencySource = snapshot.child("emergency_source").getValue(String::class.java)?.lowercase()?.trim() ?: "none"
+                emergencyActive =
+                    snapshot.child("emergency_active").getValue(Boolean::class.java) ?: false
+                emergencySource =
+                    snapshot.child("emergency_source").getValue(String::class.java)
+                        ?.lowercase()
+                        ?.trim() ?: "none"
                 updateModeButton()
             }
 
@@ -497,6 +547,17 @@ class DashboardFragment : Fragment() {
         emergencyListener?.let {
             database.child("pergola/safety").addValueEventListener(it)
         }
+    }
+
+    private fun isInternetAvailable(): Boolean {
+        val connectivityManager =
+            requireContext().getSystemService(Context.CONNECTIVITY_SERVICE)
+                    as ConnectivityManager
+
+        val network = connectivityManager.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 
     override fun onDestroyView() {
