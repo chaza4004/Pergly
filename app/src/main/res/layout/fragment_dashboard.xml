@@ -47,6 +47,7 @@
 
             <!-- Online Status Badge -->
             <LinearLayout
+                android:id="@+id/statusBadge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
@@ -58,6 +59,7 @@
                 android:paddingBottom="6dp">
 
                 <View
+                    android:id="@+id/statusDot"
                     android:layout_width="8dp"
                     android:layout_height="8dp"
                     android:layout_marginEnd="6dp"
@@ -67,7 +69,7 @@
                     android:id="@+id/statusText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Online"
+                    android:text="--"
                     android:textColor="#00D9A3"
                     android:textSize="14sp"
                     android:textStyle="bold" />
@@ -118,7 +120,7 @@
                     android:id="@+id/powerValue"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="917"
+                    android:text="--"
                     android:textColor="#00D9A3"
                     android:textSize="72sp"
                     android:textStyle="bold"
