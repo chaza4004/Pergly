@@ -1,5 +1,8 @@
 package com.example.pergly.fragments
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -12,14 +15,36 @@ import androidx.fragment.app.Fragment
 import com.example.pergly.R
 import com.google.android.material.button.MaterialButton
 import com.google.firebase.database.*
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.app.ActivityCompat
+import com.example.pergly.api.RetrofitClient
+import com.example.pergly.api.WeatherResponse
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.FusedLocationProviderClient
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import com.google.android.gms.location.Priority
+import android.app.Activity
+import android.content.Intent
+import androidx.activity.result.contract.ActivityResultContracts
+import android.content.SharedPreferences
+import com.example.pergly.ScanActivity
+import android.content.Context
 
 class DashboardFragment : Fragment() {
+    private lateinit var statusBadge: View
 
     private lateinit var powerValue: TextView
     private lateinit var todayTotalText: TextView
     private lateinit var modeBtn: MaterialButton
     private lateinit var statusText: TextView
+    private lateinit var statusDot: View
 
+    private lateinit var scanQrBtn: MaterialButton
+    private lateinit var prefs: SharedPreferences
+    private var pergolaId: String = "PERGLY_UNIT_01"
     private lateinit var windSpeedText: TextView
     private lateinit var windStatusText: TextView
 
@@ -38,6 +63,7 @@ class DashboardFragment : Fragment() {
     private lateinit var motor4Label: TextView
     private lateinit var motor4Percentage: TextView
     private lateinit var motor4Progress: ProgressBar
+    private lateinit var connectedUnitText: TextView
 
     private lateinit var sensorNWDirection: TextView
     private lateinit var sensorNWValue: TextView
@@ -51,7 +77,12 @@ class DashboardFragment : Fragment() {
     private lateinit var sensorSEDirection: TextView
     private lateinit var sensorSEValue: TextView
 
+
+
     private lateinit var database: DatabaseReference
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private val LOCATION_PERMISSION_REQUEST_CODE = 1001
+    private val weatherApiKey = "9494ab07cfe14eb14ad7f4d876acce53"
 
     private var isAutoMode = false
     private var currentWindSpeed = 0
@@ -79,21 +110,125 @@ class DashboardFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         database = FirebaseDatabase.getInstance().reference
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+        prefs = requireContext().getSharedPreferences("pergly_prefs", android.content.Context.MODE_PRIVATE)
+        pergolaId = prefs.getString("PERGOLA_ID", "PERGLY_UNIT_01") ?: "PERGLY_UNIT_01"
 
         initViews(view)
+        prefs = requireContext().getSharedPreferences("pergly_prefs", Context.MODE_PRIVATE)
+        val savedId = prefs.getString("PERGOLA_ID", null)
+
+        if (savedId != null) {
+            connectedUnitText.text = "Connected Unit: $savedId"
+            connectedUnitText.setTextColor(resources.getColor(R.color.teal_200, null))
+        } else {
+            connectedUnitText.text = "Connected Unit: Not connected"
+            connectedUnitText.setTextColor(resources.getColor(android.R.color.darker_gray, null))
+        }
         setupModeButton()
         listenToSensorData()
         listenToMotorPositions()
         listenToLightSensors()
         listenToEmergencyState()
         listenToWindData()
+        requestLocationAndFetchWeather()
+    }
+
+    private fun fetchWeatherByCoordinates(latitude: Double, longitude: Double) {
+        val call = RetrofitClient.weatherService.getWeatherByCoordinates(
+            latitude = latitude,
+            longitude = longitude,
+            apiKey = weatherApiKey
+        )
+
+        call.enqueue(object : Callback<WeatherResponse> {
+            override fun onResponse(
+                call: Call<WeatherResponse>,
+                response: Response<WeatherResponse>
+            ) {
+                if (!isAdded) return
+
+                if (response.isSuccessful && response.body() != null) {
+                    val weather = response.body()!!
+                    val description = weather.weather.firstOrNull()?.description ?: "Unknown"
+                    val cityName = weather.name
+
+                    windStatusText.text = "$cityName • $description"
+                } else {
+                    windStatusText.text = "Failed to load weather"
+                }
+            }
+
+            override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
+                if (!isAdded) return
+                windStatusText.text = "No internet connection"
+            }
+        })
+    }
+
+    private fun requestLocationAndFetchWeather() {
+        if (!isAdded) return
+
+        val fineGranted = ActivityCompat.checkSelfPermission(
+            requireContext(),
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        val coarseGranted = ActivityCompat.checkSelfPermission(
+            requireContext(),
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (!fineGranted && !coarseGranted) {
+            requestPermissions(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ),
+                LOCATION_PERMISSION_REQUEST_CODE
+            )
+            windStatusText.text = "Waiting for location permission"
+            return
+        }
+
+        windStatusText.text = "Loading weather..."
+
+        fusedLocationClient.lastLocation
+            .addOnSuccessListener { location ->
+                if (location != null) {
+                    fetchWeatherByCoordinates(location.latitude, location.longitude)
+                } else {
+                    fusedLocationClient.getCurrentLocation(
+                        com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY,
+                        null
+                    ).addOnSuccessListener { currentLocation ->
+                        if (currentLocation != null) {
+                            fetchWeatherByCoordinates(
+                                currentLocation.latitude,
+                                currentLocation.longitude
+                            )
+                        } else {
+                            windStatusText.text = "Location unavailable"
+                        }
+                    }.addOnFailureListener {
+                        windStatusText.text = "Failed to get location"
+                    }
+                }
+            }
+            .addOnFailureListener {
+                windStatusText.text = "Failed to get location"
+            }
     }
 
     private fun initViews(view: View) {
+        statusBadge = view.findViewById(R.id.statusBadge)
+
         powerValue = view.findViewById(R.id.powerValue)
         todayTotalText = view.findViewById(R.id.todayTotalText)
         modeBtn = view.findViewById(R.id.modeBtn)
         statusText = view.findViewById(R.id.statusText)
+        connectedUnitText = view.findViewById(R.id.connectedUnitText)
+        statusDot = view.findViewById(R.id.statusDot)
 
         windSpeedText = view.findViewById(R.id.windSpeedText)
         windStatusText = view.findViewById(R.id.windStatusText)
@@ -141,7 +276,26 @@ class DashboardFragment : Fragment() {
         sensorSEDirection = sensorSE.findViewById(R.id.sensorDirection)
         sensorSEValue = sensorSE.findViewById(R.id.sensorValue)
         sensorSEDirection.text = "SE"
+
+        scanQrBtn = view.findViewById(R.id.scanQrBtn)
     }
+    private val scanQrLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val scannedPergolaId = result.data?.getStringExtra("PERGOLA_ID")
+                if (!scannedPergolaId.isNullOrBlank()) {
+                    pergolaId = scannedPergolaId
+                    prefs.edit().putString("PERGOLA_ID", pergolaId).apply()
+
+                    Toast.makeText(requireContext(), "Connected to $pergolaId", Toast.LENGTH_SHORT).show()
+
+                    connectedUnitText.text = "Connected Unit: $pergolaId"
+                    connectedUnitText.setTextColor(resources.getColor(R.color.teal_200, null))
+                    // Later, if you move to multi-unit Firebase structure,
+                    // reload listeners using this pergolaId.
+                }
+            }
+        }
 
     private fun setupModeButton() {
         modeListener = object : ValueEventListener {
@@ -154,6 +308,7 @@ class DashboardFragment : Fragment() {
             override fun onCancelled(error: DatabaseError) {
                 Log.e("DashboardFragment", "Mode listener cancelled: ${error.message}")
             }
+
         }
 
         modeListener?.let {
@@ -172,6 +327,10 @@ class DashboardFragment : Fragment() {
 
             val newMode = if (isAutoMode) "manual" else "auto"
             database.child("pergola/mode").setValue(newMode)
+        }
+        scanQrBtn.setOnClickListener {
+            val intent = Intent(requireContext(), ScanActivity::class.java)
+            scanQrLauncher.launch(intent)
         }
     }
 
@@ -210,6 +369,13 @@ class DashboardFragment : Fragment() {
     }
 
     private fun listenToSensorData() {
+        statusText.text = "Loading..."
+        statusText.setTextColor(requireContext().getColor(R.color.status_online))
+        statusDot.setBackgroundResource(R.drawable.circle_green)
+
+        powerValue.text = "--"
+        todayTotalText.text = "--"
+
         powerListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val currentWatts =
@@ -222,20 +388,53 @@ class DashboardFragment : Fragment() {
                         ?: snapshot.child("today_kwh").getValue(Long::class.java)?.toDouble()
                         ?: 0.0
 
-                val online = snapshot.child("online").getValue(Boolean::class.java) ?: false
-
                 powerValue.text = String.format("%.0f", currentWatts)
                 todayTotalText.text = String.format("%.2f kWh", todayKwh)
-                statusText.text = if (online) "Online" else "Offline"
+
+                if (isInternetAvailable()) {
+                    statusText.text = "Online"
+                    statusText.setTextColor(requireContext().getColor(R.color.status_online))
+                    statusDot.setBackgroundResource(R.drawable.circle_green)
+                    statusBadge.setBackgroundResource(R.drawable.status_badge)
+                } else {
+                    statusText.text = "Offline"
+                    statusText.setTextColor(requireContext().getColor(R.color.status_offline))
+                    statusDot.setBackgroundResource(R.drawable.circle_red)
+                    statusBadge.setBackgroundResource(R.drawable.status_badge_red)
+                }
+
+                Log.d("API_SUCCESS", "Power loaded: $currentWatts")
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("DashboardFragment", "Power listener cancelled: ${error.message}")
+                Log.e("API_ERROR", "Power listener failed: ${error.message}")
+
+                statusText.text = "Offline"
+                statusText.setTextColor(requireContext().getColor(R.color.status_offline))
+                statusDot.setBackgroundResource(R.drawable.circle_red)
+
+                powerValue.text = "--"
+                todayTotalText.text = "--"
             }
         }
 
         powerListener?.let {
             database.child("pergola/power").addValueEventListener(it)
+        }
+    }
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.isNotEmpty() && grantResults.any { it == PackageManager.PERMISSION_GRANTED }) {
+                requestLocationAndFetchWeather()
+            } else {
+                windStatusText.text = "Location permission denied"
+            }
         }
     }
 
@@ -254,7 +453,7 @@ class DashboardFragment : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("DashboardFragment", "Motor listener cancelled: ${error.message}")
+                Log.e("API_ERROR", "Motor listener failed: ${error.message}")
             }
         }
 
@@ -284,7 +483,7 @@ class DashboardFragment : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("DashboardFragment", "Sensor listener cancelled: ${error.message}")
+                Log.e("API_ERROR", "Sensor listener failed: ${error.message}")
             }
         }
 
@@ -294,6 +493,9 @@ class DashboardFragment : Fragment() {
     }
 
     private fun listenToWindData() {
+        windSpeedText.text = "--"
+        windStatusText.text = "Loading..."
+
         windListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val windSpeed =
@@ -309,10 +511,14 @@ class DashboardFragment : Fragment() {
                 } else {
                     "Safe conditions"
                 }
+
+                Log.d("API_SUCCESS", "Wind loaded: $windSpeed")
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("DashboardFragment", "Wind listener cancelled: ${error.message}")
+                Log.e("API_ERROR", "Wind listener failed: ${error.message}")
+                windSpeedText.text = "--"
+                windStatusText.text = "Offline"
             }
         }
 
@@ -324,8 +530,12 @@ class DashboardFragment : Fragment() {
     private fun listenToEmergencyState() {
         emergencyListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                emergencyActive = snapshot.child("emergency_active").getValue(Boolean::class.java) ?: false
-                emergencySource = snapshot.child("emergency_source").getValue(String::class.java)?.lowercase()?.trim() ?: "none"
+                emergencyActive =
+                    snapshot.child("emergency_active").getValue(Boolean::class.java) ?: false
+                emergencySource =
+                    snapshot.child("emergency_source").getValue(String::class.java)
+                        ?.lowercase()
+                        ?.trim() ?: "none"
                 updateModeButton()
             }
 
@@ -337,6 +547,17 @@ class DashboardFragment : Fragment() {
         emergencyListener?.let {
             database.child("pergola/safety").addValueEventListener(it)
         }
+    }
+
+    private fun isInternetAvailable(): Boolean {
+        val connectivityManager =
+            requireContext().getSystemService(Context.CONNECTIVITY_SERVICE)
+                    as ConnectivityManager
+
+        val network = connectivityManager.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 
     override fun onDestroyView() {

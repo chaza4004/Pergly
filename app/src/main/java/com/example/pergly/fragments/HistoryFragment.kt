@@ -1,16 +1,21 @@
 package com.example.pergly.fragments
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import com.example.pergly.R
+import com.example.pergly.viewmodel.SensorHistoryViewModel
 import com.google.firebase.database.*
 
 class HistoryFragment : Fragment() {
+
+    private lateinit var historyViewModel: SensorHistoryViewModel
 
     private lateinit var chartPlaceholder: LinearLayout
     private lateinit var peakPowerText: TextView
@@ -19,14 +24,13 @@ class HistoryFragment : Fragment() {
     private lateinit var dataPointsText: TextView
 
     private lateinit var database: DatabaseReference
-
     private var systemListener: ValueEventListener? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         return inflater.inflate(R.layout.fragment_history, container, false)
     }
 
@@ -34,8 +38,10 @@ class HistoryFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         database = FirebaseDatabase.getInstance().reference
+        historyViewModel = ViewModelProvider(this)[SensorHistoryViewModel::class.java]
 
         initViews(view)
+        observeRoomHistory()
         loadDemoChart()
         loadSystemInfo()
     }
@@ -48,6 +54,13 @@ class HistoryFragment : Fragment() {
         totalPowerText = view.findViewById(R.id.totalPowerText)
     }
 
+    private fun observeRoomHistory() {
+        historyViewModel.allHistory.observe(viewLifecycleOwner) { historyList ->
+            Log.d("ROOM_READ", "Reading from Room: ${historyList.size} items")
+            dataPointsText.text = historyList.size.toString()
+        }
+    }
+
     private fun loadDemoChart() {
         val baseValues = listOf(
             0, 0, 0, 0, 1, 3, 6, 10, 15, 20, 24, 28,
@@ -57,6 +70,7 @@ class HistoryFragment : Fragment() {
         val demoValues = baseValues.map { base ->
             if (base == 0) 0 else (base + (0..3).random()).coerceAtMost(32)
         }
+
         val peak = demoValues.maxOrNull() ?: 0
         val total = demoValues.sum()
 
@@ -65,7 +79,7 @@ class HistoryFragment : Fragment() {
 
         chartPlaceholder.removeAllViews()
 
-        val maxValue = (demoValues.maxOrNull() ?: 1).toFloat()
+        val maxValue = (demoValues.maxOrNull() ?: 1).toFloat().coerceAtLeast(1f)
         val chartHeightDp = 176f
         val density = resources.displayMetrics.density
 
@@ -80,7 +94,6 @@ class HistoryFragment : Fragment() {
             val params = LinearLayout.LayoutParams(barWidthPx, barHeightPx)
             params.marginEnd = marginPx
             bar.layoutParams = params
-
             bar.setBackgroundResource(R.drawable.chart_bar_bg)
 
             chartPlaceholder.addView(bar)
@@ -91,15 +104,11 @@ class HistoryFragment : Fragment() {
         systemListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val uptimeHours = snapshot.child("uptime_hours").getValue(Double::class.java) ?: 0.0
-                val dataPoints = snapshot.child("data_points").getValue(Int::class.java) ?: 0
-
                 uptimeText.text = String.format("%.1f hours", uptimeHours)
-                dataPointsText.text = dataPoints.toString()
             }
 
             override fun onCancelled(error: DatabaseError) {
                 uptimeText.text = "-- hours"
-                dataPointsText.text = "--"
             }
         }
 
